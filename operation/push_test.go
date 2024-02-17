@@ -29,24 +29,28 @@ func TestAppPush(t *testing.T) {
 	dropletAssoc := g.DropletAssociation()
 
 	fakeAppZipReader := strings.NewReader("blah zip zip")
-	manifest := &AppManifest{
-		Name:       app.Name,
-		Buildpacks: []string{"java-buildpack-offline"},
 
-		AppManifestProcess: AppManifestProcess{
-			HealthCheckType:         "http",
-			HealthCheckHTTPEndpoint: "/health",
-			Instances:               2,
-			Memory:                  "1G",
-		},
-		Routes: &AppManifestRoutes{
-			{
-				Route: "https://spring-music.cf.apps.example.org",
-			},
-		},
-		Services: &AppManifestServices{{Name: "spring-music-sql"}},
-		Stack:    "cflinuxfs3",
+	manifest := &AppManifest{
+		Name: app.Name,
 	}
+	manifest.WithBuildpacks([]string{"java-buildpack-offline"})
+
+	p := AppManifestProcess{}
+	p.WithHealthCheckType("http")
+	p.WithHealthCheckHTTPEndpoint("/health")
+	p.WithInstances(2)
+	p.WithMemory("1G")
+	manifest.WithAppManifestProcess(p)
+
+	r := AppManifestRoute{}
+	r.WithRoute("https://spring-music.cf.apps.example.org")
+	manifest.WithRoutes(AppManifestRoutes{r})
+
+	s := AppManifestService{}
+	s.WithName("spring-music-sql")
+	manifest.WithServices(AppManifestServices{s})
+
+	manifest.WithStack("cflinuxfs3")
 
 	testutil.SetupMultiple([]testutil.MockRoute{
 		{

@@ -11,41 +11,43 @@ func TestManifestMarshalling(t *testing.T) {
 	m := &Manifest{
 		Applications: []*AppManifest{
 			{
-				Name:       "spring-music",
-				Buildpacks: []string{"java_buildpack_offline"},
-				Env: map[string]string{
-					"SPRING_CLOUD_PROFILE": "dev",
-				},
-				NoRoute: false,
-				Routes: &AppManifestRoutes{
-					{Route: "spring-music-egregious-porcupine-oa.apps.example.org"},
-				},
-				Services: &AppManifestServices{
-					{Name: "my-sql"},
-				},
-				Stack: "cflinuxfs3",
-				AppManifestProcess: AppManifestProcess{
-					HealthCheckType:         "http",
-					HealthCheckHTTPEndpoint: "/health",
-					Instances:               2,
-					LogRateLimitPerSecond:   "100MB",
-					Memory:                  "1G",
-					Timeout:                 60,
-					Command:                 "java",
-					DiskQuota:               "1G",
-				},
+				Name: "spring-music",
 			},
 		},
 	}
+	m.Applications[0].WithBuildpacks([]string{"java_buildpack_offline"})
+	m.Applications[0].WithEnv(map[string]string{
+		"SPRING_CLOUD_PROFILE": "dev",
+	})
+	approute := AppManifestRoute{}
+	approute.WithRoute("spring-music-egregious-porcupine-oa.apps.example.org")
+
+	m.Applications[0].WithRoutes([]AppManifestRoute{approute})
+	services := AppManifestService{}
+	services.WithName("my-sql")
+
+	m.Applications[0].WithServices([]AppManifestService{services})
+	m.Applications[0].WithStack("cflinuxfs3")
+	appProcess := AppManifestProcess{}
+	appProcess.WithHealthCheckType("http")
+	appProcess.WithHealthCheckHTTPEndpoint("/health")
+	appProcess.WithInstances(2)
+	appProcess.WithMemory("1G")
+	appProcess.WithTimeout(60)
+	appProcess.WithCommand("java")
+	appProcess.WithDiskQuota("1G")
+	appProcess.WithLogRateLimitPerSecond("100MB")
+
+	m.Applications[0].WithAppManifestProcess(appProcess)
 	b, err := yaml.Marshal(&m)
 	require.NoError(t, err)
 	require.Equal(t, fullSpringMusicYaml, string(b))
 
 	a := NewAppManifest("spring-music")
-	a.Buildpacks = []string{"java_buildpack_offline"}
-	a.Memory = "1G"
-	a.NoRoute = true
-	a.Stack = "cflinuxfs3"
+	a.WithBuildpacks([]string{"java_buildpack_offline"})
+	a.WithMemory("1G")
+	a.WithNoRoute(true)
+	a.WithStack("cflinuxfs3")
 
 	m = &Manifest{
 		Applications: []*AppManifest{a},
@@ -82,8 +84,5 @@ const minimalSpringMusicYaml = `applications:
   - java_buildpack_offline
   no-route: true
   stack: cflinuxfs3
-  health-check-type: port
-  health-check-http-endpoint: /
-  instances: 1
   memory: 1G
 `
